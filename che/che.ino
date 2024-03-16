@@ -1,23 +1,15 @@
 #include "BluetoothSerial.h"
-
 BluetoothSerial SerialBT;
-//电机驱动引脚，根据实际情况进行修改
 int motor1Pin1 = 18; // Motor 1 control pin 1
 int motor1Pin2 = 19; // Motor 1 control pin 2
 int motor2Pin1 = 26; // Motor 2 control pin 1
 int motor2Pin2 = 27; // Motor 2 control pin 2
-//电机调速引脚，根据实际修改
 int motorspeedPin1 = 2;//Motor 1 speed pin
 int motorspeedPin2 = 4;//Motor 2 speed pin
-
-//电机初始速度，0最小，255最大
 int motorSpeed1 = 140; // Motor speed (0-255)
 int motorSpeed2 = 155; // Motor speed (0-255)
-  
-//这个必须测试，否则小车无法移动到指定点
-int waitTimes1 = 510; //延时毫秒数，延时时长需要测试，为小车移动一格距离的所需时间，单位毫秒
+int waitTimes1 = 510;
 int waitTimes2 = 370;
-
 bool isover = true;
 int currentX = 0;
 int currentY = 0;
@@ -33,7 +25,6 @@ int wang[][2] = { {0,1},{2,1},{2,2},{1,2},{1,3},{2,3},{2,4},{0,4},{0,5},{5,5},{5
 const int MAX_COORDINATES = 10; // Maximum number of coordinates
 Coordinate coordinates[MAX_COORDINATES];
 int numCoordinates = 0;
-
 void setup() {
     Serial.begin(9600);
     SerialBT.begin("ESP32BT");
@@ -47,27 +38,26 @@ void setup() {
     analogWrite(motorspeedPin2, motorSpeed2);
     stopMotors();
 }
-
 void loop() {
     if (SerialBT.available() > 0) {
         isover = false;
         numCoordinates = 0;
-        String input = SerialBT.readStringUntil(':');   //判断小车是否已经与手机连接
+        String input = SerialBT.readStringUntil(':');
 
         if (!isover)
         {
-            if (input == "4")//画4
+            if (input == "4")
             {
                 int les = sizeof(four) / sizeof(four[0]);
                 drawfont(four, les);
 
             }
-            else if (input == "3")//画3
+            else if (input == "3")
             {
                 int les = sizeof(three) / sizeof(three[0]);
                 drawfont(three, les);
             }
-            else if (input == "5")//画王
+            else if (input == "5")
             {
                 int les = sizeof(wang) / sizeof(wang[0]);
                 drawfont(wang, les);
@@ -78,15 +68,15 @@ void loop() {
                     processCoordinate(input);
                     input = SerialBT.readStringUntil(':');
                 }
-                if (numCoordinates > 1)//多个坐标
+                if (numCoordinates > 1)
                 {
                     sortCoordinates();
                     targetMove();
-                    CarMove(0, 0, true);//返回原点
+                    CarMove(0, 0, true);
                     isover = true;
                     Serial.println("stop");
                 }
-                else {  //单个坐标
+                else {  
                     for (int i = 0; i < 3; i++)
                     {
                         CarMove(coordinates[0].x, coordinates[0].y, true);
@@ -103,7 +93,7 @@ void loop() {
     }
 }
 
-//通过定义数组使小车依次到达数组中的点
+
 void drawfont(int(*a)[2], int lengths) {
 
     // int lengths = sizeof(a) / sizeof(a[0]);
@@ -115,8 +105,6 @@ void drawfont(int(*a)[2], int lengths) {
     isover = true;
     Serial.println("stop");
 }
-
-//处理坐标，计算出各坐标与小车的距离并从小到大排序
 void processCoordinate(String coordinate) {
     int commaIndex = coordinate.indexOf(',');
     if (commaIndex != -1 && numCoordinates < MAX_COORDINATES) {
@@ -136,7 +124,6 @@ void processCoordinate(String coordinate) {
     }
 }
 
-//利用冒泡法把坐标点按远近排序
 void sortCoordinates() {
     // Bubble sort (you can replace this with a more efficient sorting algorithm)
     for (int i = 0; i < numCoordinates - 1; i++) {
@@ -161,8 +148,6 @@ void sortCoordinates() {
     //     Serial.println(coordinates[i].distance);
     // }
 }
-
-//使小车返回
 void Car_back_Move(int x, int y, bool stop) {
 
     int delaytimes_x = abs(currentX - x);
@@ -213,7 +198,7 @@ void Car_back_Move(int x, int y, bool stop) {
 
 }
 
-//使小车运动
+
 void CarMove(int x, int y, bool stop) {
     int delaytimes_x = abs(currentX - x);
     int delaytimes_y = abs(currentY - y);
@@ -264,7 +249,7 @@ void CarMove(int x, int y, bool stop) {
 
 }
 
-//使小车到达目标点
+
 void targetMove() {
     for (int i = 0; i < numCoordinates; i++) {
         Serial.print("(");
@@ -276,8 +261,6 @@ void targetMove() {
         CarMove(coordinates[i].x, coordinates[i].y, true);
     }
 }
-
-//调整小车电机驱动使小车向前运动
 void moveForward() {
     digitalWrite(motor1Pin1, HIGH);
     digitalWrite(motor1Pin2, LOW);
@@ -285,8 +268,6 @@ void moveForward() {
     digitalWrite(motor2Pin2, LOW);
 }
 
-
-//调整小车电机驱动使小车向后运动
 void moveBackward() {
     digitalWrite(motor1Pin1, LOW);
     digitalWrite(motor1Pin2, HIGH);
@@ -294,8 +275,6 @@ void moveBackward() {
     digitalWrite(motor2Pin2, HIGH);
 }
 
-
-//调整小车电机驱动使小车向左运动
 void moveLeft() {
     digitalWrite(motor1Pin1, LOW);
     digitalWrite(motor1Pin2, HIGH);
@@ -303,8 +282,6 @@ void moveLeft() {
     digitalWrite(motor2Pin2, LOW);
 }
 
-
-//调整小车电机驱动使小车向右运动
 void moveRight() {
     digitalWrite(motor1Pin1, HIGH);
     digitalWrite(motor1Pin2, LOW);
@@ -312,8 +289,6 @@ void moveRight() {
     digitalWrite(motor2Pin2, HIGH);
 }
 
-
-//调整小车电机驱动使小车停止运动
 void stopMotors() {
     digitalWrite(motor1Pin1, LOW);
     digitalWrite(motor1Pin2, LOW);
